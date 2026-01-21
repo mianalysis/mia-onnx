@@ -1,3 +1,0 @@
-META-INF/json/org.scijava.plugin.Plugin
-io/github/mianalysis/mia/module/images/process/RunONNXModel.class
-io/github/mianalysis/mia/module/images/process/RunONNXModel$OutputBitDepths.class
