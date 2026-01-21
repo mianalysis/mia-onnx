@@ -1,0 +1,78 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.mianalysis</groupId>
+    <artifactId>mia-onnx</artifactId>
+    <version>1.7.0</version>
+    <packaging>jar</packaging>
+    <name>mia-onnx</name>
+    <url>https://github.com/mianalysis/mia-onnx</url>
+    <inceptionYear>2018</inceptionYear>
+    <description>Modules to run ONNX deep learning models in MIA</description>
+    <organization>
+        <name>University of Bristol</name>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License v3+</name>
+            <url>http://www.gnu.org/licenses/gpl.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <dependency.locations.selected>false</dependency.locations.selected>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <scp>compile</scp>
+        <license.licenseName>GNU General Public License v3+</license.licenseName>
+        <license.copyrightOwners>Stephen Cross</license.copyrightOwners>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>scijava.public</id>
+            <url>https://maven.scijava.org/content/groups/public</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.imagej</groupId>
+            <artifactId>imagej</artifactId>
+            <version>2.14.0</version>
+            <scope>${scp}</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.mianalysis</groupId>
+            <artifactId>mia-core</artifactId>
+            <version>1.7.23</version>
+            <scope>${scp}</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.mianalysis</groupId>
+            <artifactId>mia-modules</artifactId>
+            <version>1.7.23</version>
+            <scope>${scp}</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.mianalysis</groupId>
+            <artifactId>mia-plugin</artifactId>
+            <version>1.7.23</version>
+            <scope>${scp}</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.microsoft.onnxruntime</groupId>
+            <artifactId>onnxruntime</artifactId>
+            <version>1.23.2</version>
+        </dependency>
+    </dependencies>
+</project>

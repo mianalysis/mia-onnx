@@ -1,0 +1,61 @@
+{
+    "tasks": [
+        {
+            "label": "maven: install-quick",
+            "type": "shell",
+            "command": "mvn clean install -Dscp=provided -D enforcer.skip -D maven.test.skip -D maven.javadoc.skip",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "maven: package-quick",
+            "type": "shell",
+            "command": "mvn clean package -Dscp=provided -D enforcer.skip -D maven.test.skip -D maven.javadoc.skip -T 1C",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "maven: package-modules-quick",
+            "type": "shell",
+            "command": "mvn clean package -Dscp=provided -D enforcer.skip -D maven.test.skip -D maven.javadoc.skip -pl mia-modules -am",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "maven: set-version",
+            "type": "shell",
+            "command": "mvn versions:set -DnewVersion=1.5.2",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "maven: package-complete",
+            "type": "shell",
+            "command": "mvn clean package -Dscp=provided site -e -T 1C -Dparallel=all -DperCoreThreadCount=true -D maven.javadoc.skip",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "java (build)",
+            "paths": [
+                "${workspace}"
+            ],
+            "isFullBuild": true,
+            "group": "build",
+            "problemMatcher": [],
+            "label": "java (build): Build Workspace",
+            "detail": "$(tools) Build all the Java projects in workspace."
+        }
+    ]
+}
