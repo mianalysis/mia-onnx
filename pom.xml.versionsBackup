@@ -5,7 +5,7 @@
 
     <groupId>io.github.mianalysis</groupId>
     <artifactId>mia-onnx</artifactId>
-    <version>1.7.1</version>
+    <version>1.7.0</version>
     <packaging>jar</packaging>
     <name>mia-onnx</name>
     <url>https://github.com/mianalysis/mia-onnx</url>

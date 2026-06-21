@@ -55,8 +55,6 @@ public class RunONNXModel extends Module {
 
     public static final String INPUT_IMAGE = "Input image";
 
-    public static final String INPUT_NOTE = "Input note";
-
     public static final String OUTPUT_SEPARATOR = "Image output";
 
     public static final String OUTPUT_IMAGE = "Output image";
@@ -79,6 +77,12 @@ public class RunONNXModel extends Module {
     public static final String MODEL_PATH = "Model path";
 
     public static final String TILE_OVERLAP = "Tile overlap (px)";
+
+    private String initialisedModelPath = "";
+
+    private OrtEnvironment environment = null;
+
+    private OrtSession session = null;
 
     public interface OutputBitDepths {
         String EIGHT = "8";
@@ -174,7 +178,7 @@ public class RunONNXModel extends Module {
         TensorInfo inputInfo = (TensorInfo) session.getInputInfo().get("input").getInfo();
         long[] inputShape = inputInfo.getShape();
         int inputChannels = (int) inputShape[1];
-        int inputWidth = (int) inputShape[2];
+        int inputWidth = (int) inputShape[2]; // Do these need inverting since we transpose the image?
         int inputHeight = (int) inputShape[3];
 
         float[][][][] floatArray = new float[1][inputChannels][inputWidth][inputHeight];
@@ -183,7 +187,7 @@ public class RunONNXModel extends Module {
             ImageProcessor inputIpr = inputIpl.getProcessor();
             for (int x = 0; x < inputWidth; x++)
                 for (int y = 0; y < inputHeight; y++)
-                    floatArray[0][c][x][y] = inputIpr.getPixelValue(x, y);
+                    floatArray[0][c][y][x] = inputIpr.getPixelValue(x, y);
         }
 
         return OnnxTensor.createTensor(environment, floatArray);
@@ -225,11 +229,11 @@ public class RunONNXModel extends Module {
                 for (int x = 0; x < outputWidth; x++)
                     for (int y = 0; y < outputHeight; y++)
                         if (bitDepth == 8)
-                            outputIpr.set(x, y, (int) Math.round(output[0][c][x][y] * 255));
+                            outputIpr.set(x, y, (int) Math.round(output[0][c][y][x] * 255));
                         else if (bitDepth == 16)
-                            outputIpr.setf(x, y, (int) Math.round(output[0][c][x][y] * 65535));
+                            outputIpr.setf(x, y, (int) Math.round(output[0][c][y][x] * 65535));
                         else if (bitDepth == 32)
-                            outputIpr.setf(x, y, output[0][c][x][y]);
+                            outputIpr.setf(x, y, output[0][c][y][x]);
             }
         } else {
             for (int cIdx = 0; cIdx < classList.length; cIdx++) {
@@ -239,11 +243,11 @@ public class RunONNXModel extends Module {
                 for (int x = 0; x < outputWidth; x++)
                     for (int y = 0; y < outputHeight; y++)
                         if (bitDepth == 8)
-                            outputIpr.set(x, y, (int) Math.round(output[0][c-1][x][y] * 255));
+                            outputIpr.set(x, y, (int) Math.round(output[0][c - 1][y][x] * 255));
                         else if (bitDepth == 16)
-                            outputIpr.setf(x, y, (int) Math.round(output[0][c-1][x][y] * 65535));
+                            outputIpr.setf(x, y, (int) Math.round(output[0][c - 1][y][x] * 65535));
                         else if (bitDepth == 32)
-                            outputIpr.setf(x, y, output[0][c-1][x][y]);
+                            outputIpr.setf(x, y, output[0][c - 1][y][x]);
             }
         }
 
@@ -285,11 +289,20 @@ public class RunONNXModel extends Module {
         }
 
         // Getting input image
-        Image inputImage = workspace.getImages().get(inputImageName);
+        Image inputImage = workspace.getImages().get(inputImageName).duplicate(inputImageName);
+
+        // Converting to 32-bit if necessary
+        if (inputImage.getImagePlus().getBitDepth() != 32)
+            ImageTypeConverter.process(inputImage.getImagePlus(), 32, ImageTypeConverter.ScalingModes.SCALE);
 
         try {
-            OrtEnvironment environment = OrtEnvironment.getEnvironment();
-            OrtSession session = environment.createSession(modelPath);
+            if (environment == null || !initialisedModelPath.equals(modelPath))
+                environment = OrtEnvironment.getEnvironment();
+
+            if (session == null || !initialisedModelPath.equals(modelPath))
+                session = environment.createSession(modelPath);
+
+            initialisedModelPath = modelPath;
 
             // Tiling image if necessary
             Image tiledInputImage = tileImage(session, inputImage, tileOverlap);
@@ -300,7 +313,7 @@ public class RunONNXModel extends Module {
             int total = (int) (tiledInputImage.getNSlices() * tiledInputImage.getNFrames());
             for (int z = 0; z < tiledInputImage.getNSlices(); z++) {
                 for (int t = 0; t < tiledInputImage.getNFrames(); t++) {
-                    Image inputSlice = ExtractSubstack.extractSubstack(tiledInputImage, "TIled slice", "1-end",
+                    Image inputSlice = ExtractSubstack.extractSubstack(tiledInputImage, "Tiled slice", "1-end",
                             String.valueOf(z + 1), String.valueOf(t + 1));
 
                     // Preparing input data
@@ -319,6 +332,8 @@ public class RunONNXModel extends Module {
                     addSliceToStack(tiledOutputImage, outputSlice, z, t);
 
                     writeProgressStatus(++count, total, "slices");
+
+                    inputTensor.close();
 
                 }
             }
@@ -340,15 +355,12 @@ public class RunONNXModel extends Module {
             MIA.log.writeError(e);
             return Status.FAIL;
         }
-
     }
 
     @Override
     protected void initialiseParameters() {
         parameters.add(new SeparatorP(INPUT_SEPARATOR, this));
         parameters.add(new InputImageP(INPUT_IMAGE, this));
-        parameters.add(new MessageP(INPUT_NOTE, this,
-                "Input images are expected to be 32-bit with values in the range 0-1.", ParameterState.MESSAGE));
 
         parameters.add(new SeparatorP(OUTPUT_SEPARATOR, this));
         parameters.add(new OutputImageP(OUTPUT_IMAGE, this));
@@ -370,7 +382,6 @@ public class RunONNXModel extends Module {
         Parameters returnedParameters = new Parameters();
         returnedParameters.add(parameters.getParameter(INPUT_SEPARATOR));
         returnedParameters.add(parameters.getParameter(INPUT_IMAGE));
-        returnedParameters.add(parameters.getParameter(INPUT_NOTE));
 
         returnedParameters.add(parameters.getParameter(OUTPUT_SEPARATOR));
         returnedParameters.add(parameters.getParameter(OUTPUT_IMAGE));
