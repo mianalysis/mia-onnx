@@ -31,11 +31,9 @@ import io.github.mianalysis.mia.object.parameters.ChoiceP;
 import io.github.mianalysis.mia.object.parameters.FilePathP;
 import io.github.mianalysis.mia.object.parameters.InputImageP;
 import io.github.mianalysis.mia.object.parameters.OutputImageP;
-import io.github.mianalysis.mia.object.parameters.ParameterState;
 import io.github.mianalysis.mia.object.parameters.Parameters;
 import io.github.mianalysis.mia.object.parameters.SeparatorP;
 import io.github.mianalysis.mia.object.parameters.text.IntegerP;
-import io.github.mianalysis.mia.object.parameters.text.MessageP;
 import io.github.mianalysis.mia.object.parameters.text.StringP;
 import io.github.mianalysis.mia.object.refs.collections.ImageMeasurementRefs;
 import io.github.mianalysis.mia.object.refs.collections.MetadataRefs;
@@ -292,8 +290,18 @@ public class RunONNXModel extends Module {
         Image inputImage = workspace.getImages().get(inputImageName).duplicate(inputImageName);
 
         // Converting to 32-bit if necessary
-        if (inputImage.getImagePlus().getBitDepth() != 32)
-            ImageTypeConverter.process(inputImage.getImagePlus(), 32, ImageTypeConverter.ScalingModes.SCALE);
+        int inputBitDepth = inputImage.getImagePlus().getBitDepth();
+        if (inputImage.getImagePlus().getBitDepth() != 32) {
+            ImageTypeConverter.process(inputImage.getImagePlus(), 32, ImageTypeConverter.ScalingModes.CLIP);
+            switch (inputBitDepth) {
+                case 8:
+                    ImageMath.process(inputImage, ImageMath.CalculationModes.DIVIDE, 255);
+                    break;
+                case 16:
+                    ImageMath.process(inputImage, ImageMath.CalculationModes.DIVIDE, 65535);
+                    break;
+            }
+        }
 
         try {
             if (environment == null || !initialisedModelPath.equals(modelPath))
