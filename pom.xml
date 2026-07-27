@@ -5,7 +5,7 @@
 
     <groupId>io.github.mianalysis</groupId>
     <artifactId>mia-onnx</artifactId>
-    <version>1.7.1</version>
+    <version>1.7.2</version>
     <packaging>jar</packaging>
     <name>mia-onnx</name>
     <url>https://github.com/mianalysis/mia-onnx</url>
@@ -51,21 +51,21 @@
         <dependency>
             <groupId>io.github.mianalysis</groupId>
             <artifactId>mia-core</artifactId>
-            <version>1.7.23</version>
+            <version>1.7.26</version>
             <scope>${scp}</scope>
         </dependency>
 
         <dependency>
             <groupId>io.github.mianalysis</groupId>
             <artifactId>mia-modules</artifactId>
-            <version>1.7.23</version>
+            <version>1.7.26</version>
             <scope>${scp}</scope>
         </dependency>
 
         <dependency>
             <groupId>io.github.mianalysis</groupId>
             <artifactId>mia-plugin</artifactId>
-            <version>1.7.23</version>
+            <version>1.7.26</version>
             <scope>${scp}</scope>
         </dependency>
 

@@ -13,6 +13,7 @@ import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 import ai.onnxruntime.OrtSession.Result;
 import ai.onnxruntime.TensorInfo;
+import ij.CompositeImage;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
@@ -292,6 +293,7 @@ public class RunONNXModel extends Module {
         // Converting to 32-bit if necessary
         int inputBitDepth = inputImage.getImagePlus().getBitDepth();
         if (inputImage.getImagePlus().getBitDepth() != 32) {
+            inputImage.setImagePlus(new CompositeImage(inputImage.getImagePlus()));
             ImageTypeConverter.process(inputImage.getImagePlus(), 32, ImageTypeConverter.ScalingModes.CLIP);
             switch (inputBitDepth) {
                 case 8:

@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "mia-onnx",
+            "request": "launch",
+            "mainClass": "io.github.mianalysis.mia.module.images.process.RunONNXModel",
+            "projectName": "mia-onnx",
+            "vmArgs": "-Xmx14000m --add-opens=java.base/java.lang=ALL-UNNAMED"
+        }
+    ]
+}
