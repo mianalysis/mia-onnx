@@ -126,7 +126,13 @@ public class RunONNXModel extends Module {
         return Categories.IMAGES_PROCESS;
     }
 
+    // Usually, this would come from ImageTiler, but for now we'll use a custom one
+    public static int getTileCount(int imageSize, int overlap, int tileSize) {
+        return (int) Math.ceil((double) imageSize / (double) (tileSize - overlap));
+    }
+
     public static Image tileImage(OrtSession session, Image inputImage, int tileOverlap) throws OrtException {
+        MIA.log.writeDebug("RunONNXModel using custom getTileCount method until MIA v1.8.0");
         ImagePlus inputIpl = inputImage.getImagePlus();
 
         TensorInfo inputInfo = (TensorInfo) session.getInputInfo().get("input").getInfo();
@@ -134,9 +140,14 @@ public class RunONNXModel extends Module {
         int inputWidth = (int) inputShape[2];
         int inputHeight = (int) inputShape[3];
 
+        if (inputWidth <= tileOverlap || inputHeight <= tileOverlap) {
+            MIA.log.writeWarning("Tile overlap ("+tileOverlap+") equal to or greater than tile size ("+inputWidth+", "+inputHeight+").  Please reduce tile overlap.");
+            return null;
+        }
+
         if (inputIpl.getWidth() > inputWidth || inputIpl.getHeight() > inputHeight) {
-            int xNumTiles = ImageTiler.getTileCount(inputIpl.getWidth(), tileOverlap, inputWidth);
-            int yNumTiles = ImageTiler.getTileCount(inputIpl.getHeight(), tileOverlap, inputHeight);
+            int xNumTiles = getTileCount(inputIpl.getWidth(), tileOverlap, inputWidth);
+            int yNumTiles = getTileCount(inputIpl.getHeight(), tileOverlap, inputHeight);
             ImagePlus outputIpl = ImageTiler.tile(inputIpl, xNumTiles, yNumTiles, inputWidth, inputHeight, tileOverlap,
                     tileOverlap, ImageTiler.TileAxes.T);
             return ImageFactory.createImage(inputImage.getName(), outputIpl);
@@ -160,8 +171,8 @@ public class RunONNXModel extends Module {
         int tileWidth = tiledIpl.getWidth();
         int tileHeight = tiledIpl.getHeight();
 
-        int xNumTiles = ImageTiler.getTileCount(outputWidth, tileOverlap, tileWidth);
-        int yNumTiles = ImageTiler.getTileCount(outputHeight, tileOverlap, tileHeight);
+        int xNumTiles = getTileCount(outputWidth, tileOverlap, tileWidth);
+        int yNumTiles = getTileCount(outputHeight, tileOverlap, tileHeight);
 
         ImagePlus outputIpl = ImageTiler.stitch(tiledIpl, xNumTiles, yNumTiles, tileWidth, tileHeight, tileOverlap,
                 tileOverlap, outputWidth, outputHeight, ImageTiler.TileAxes.T);
@@ -316,6 +327,9 @@ public class RunONNXModel extends Module {
 
             // Tiling image if necessary
             Image tiledInputImage = tileImage(session, inputImage, tileOverlap);
+            if (tiledInputImage == null)
+                return Status.FAIL;
+            
             Image tiledOutputImage = createEmptyOutputImage(session, "Tiled output", tiledInputImage, bitDepth,
                     classList);
 
